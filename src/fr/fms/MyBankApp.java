@@ -17,32 +17,32 @@ public class MyBankApp {
 	private static Scanner scan = new Scanner(System.in);
 	private static IBankImpl bankJob = new IBankImpl();
 
-	public static void main(String[] args) throws InputMismatchException, NullPointerException, AccountRegexException, NullAccountException, AmountRegexException, SameAccountTransferException, TransferException {
+	public static void main(String[] args) throws Exception {
 		initSomeAccounts();
 		bankApp();
 		scan.close();
 	}
 
-	private static void bankApp() throws InputMismatchException, NullPointerException, AccountRegexException, NullAccountException, AmountRegexException, SameAccountTransferException, TransferException {
+	private static void bankApp() throws Exception {
 		while(true) {
 			try {
 				Account account = selectAccount();
-				System.out.printf("Bienvenue %s, que souhaitez vous faire ?\n", account.getCustomer().getFirstName());
 				selectOperation(account);			
 
 			} catch (Exception e) {
-				System.out.println(e.getMessage());
+				System.out.println(e);
 			}
 		}
 	}
 
-	private static Account selectAccount() throws AccountRegexException, InputMismatchException, NullPointerException, NullAccountException{	
+	private static Account selectAccount() throws Exception {	
 		System.out.println("Saisissez un numéro de compte bancaire valide:");
 		long accountId = checkAccountRegex(scan.nextLine()); 
 		return bankJob.consultAccount(accountId);
 	}
 
-	private static void selectOperation(Account account) throws NullAccountException, AccountRegexException, AmountRegexException, InputMismatchException, NullPointerException, SameAccountTransferException, TransferException {
+	private static void selectOperation(Account account) throws Exception {
+		System.out.printf("Bienvenue %s, que souhaitez vous faire ?\n", account.getCustomer().getFirstName());
 		int choice = 0;
 		while(choice != 6) {
 			try {
@@ -58,16 +58,13 @@ public class MyBankApp {
 
 				switch (choice) {
 				case 1:
-					if (deposit(account))
-						System.out.println("Versement effectué avec succès.");
+					deposit(account);
 					break;
 				case 2:
-					if (withdraw(account))
-						System.out.println("Retrait effectué avec succès.");
+					withdraw(account);
 					break;
 				case 3:
-					if (transfer(account))
-						System.out.println("Transfert effectué avec succès.");
+					transfer(account);
 					break;
 				case 4:
 					System.out.println(account);
@@ -92,55 +89,52 @@ public class MyBankApp {
 		}
 	}
 
-	private static boolean deposit(Account account) throws NullAccountException, AmountRegexException {	
+	private static void deposit(Account account) throws Exception {	
 		System.out.println("Saisissez le montant à déposer sur ce compte :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
-		return bankJob.pay(account.getAccountId(), amount);
+		if (bankJob.pay(account.getAccountId(), amount))
+			System.out.println("Versement effectué avec succès.");
 	}
 
-	private static boolean withdraw(Account account) throws NullAccountException, AmountRegexException {
+	private static void withdraw(Account account) throws Exception {
 		System.out.println("Saisissez le montant à retirer sur ce compte :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
-		return bankJob.withdraw(account.getAccountId(), amount);
+		if (bankJob.withdraw(account.getAccountId(), amount))
+			System.out.println("Retrait effectué avec succès.");
 	}
 
-	private static boolean transfer(Account account) throws InputMismatchException, NullPointerException, AccountRegexException, NullAccountException, AmountRegexException, SameAccountTransferException, TransferException {
+	private static void transfer(Account account) throws Exception {
 		System.out.println("Vers quel compte souhaitez-vous virer :");
 		Account accountTo = selectAccount();
-		if (account.getAccountId() == accountTo.getAccountId()) {
-			throw new RuntimeException("Vous ne pouvez retirer et verser sur le même compte !");
-		}
+		if (account.getAccountId() == accountTo.getAccountId()) 
+			throw new TransferException("Erreur:Vous ne pouvez retirer et verser sur le même compte !");
 		System.out.println("Saisissez le montant à virer :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
-		return bankJob.transfert(account.getAccountId(), accountTo.getAccountId(), amount);
+		if (bankJob.transfert(account.getAccountId(), accountTo.getAccountId(), amount))
+			System.out.println("Transfert effectué avec succès.");
 	}
 
-	private static double checkAmountRegex(String amount) throws AmountRegexException {
-		if (!amount.matches("\\d+([\\.\\,]\\d{1,2})?")) {
-			throw new AmountRegexException("Saisie invalide: Vous devez saisir un montant sous forme de nombres, avec au maximum deux chiffres après la virgule.");
-		} else {
-			return Double.parseDouble(amount);
-		}
-	}
-
-	public static int checkRangeInput(int rangeMin, int rangeMax) throws OutOfRangeException {
-		//Gestion saisies inattendues quand on attend un CHIFFRE ENTIER dans une plage précise:	
+	private static int checkRangeInput(int rangeMin, int rangeMax) throws OutOfRangeException {
+		//Gestion saisies inattendues quand on attend un chiffre entier dans une plage précise:	
 		String input = scan.nextLine();
 		if (!input.matches("\\d")) 
-			throw new OutOfRangeException("La valeur saisie doit obligatoirement être un chiffre entier.");
+			throw new OutOfRangeException("Erreur:La valeur saisie doit obligatoirement être un chiffre entier.");
 		else if (Integer.parseInt(input) < rangeMin || Integer.parseInt(input) > rangeMax) 
-			throw new OutOfRangeException("La valeur saisie ne correspond à aucun des choix disponibles."); 
+			throw new OutOfRangeException("Erreur:La valeur saisie ne correspond à aucun des choix disponibles."); 
 		else 
 			return Integer.parseInt(input);
 	}
 
-	public static long checkAccountRegex(String accountId) throws AccountRegexException {
-		if (!accountId.matches("\\d{9,9}")) {
-			throw new InputMismatchException("Saisie invalide: un numéro de compte est toujours constitué de 9 chiffres sans espaces ni caractères spéciaux.");
-		} else {
-			return Long.parseLong(accountId);
-		}
-
+	private static long checkAccountRegex(String accountId) throws AccountRegexException {
+		if (!accountId.matches("\\d{9,9}")) 
+			throw new InputMismatchException("Erreur:un numéro de compte est toujours constitué de 9 chiffres sans espaces ni caractères spéciaux.");
+		else return Long.parseLong(accountId);
+	}
+	
+	private static double checkAmountRegex(String amount) throws AmountRegexException {
+		if (!amount.matches("\\d+([\\.\\,]\\d{1,2})?")) 
+			throw new AmountRegexException("Erreur:Vous devez saisir un montant sous forme de nombres, avec au maximum deux chiffres après la virgule.");
+		 else return Double.parseDouble(amount);
 	}
 
 	private static void initSomeAccounts() {

@@ -51,7 +51,7 @@ public class IBankImpl implements IBank {
 	public Account consultAccount(long accountId) throws NullAccountException {		
 		Account account = accounts.get(accountId);
 		if (account == null) {
-			throw new NullAccountException("Vous demandez un compte inexistant !");
+			throw new NullAccountException("Erreur:Vous demandez un compte inexistant !");
 		}
 		return account;
 	}
@@ -70,7 +70,7 @@ public class IBankImpl implements IBank {
 			Transaction trans = new Transfert(numTransactions++,new Date(),amount,accountId);
 			account.getListTransactions().add(trans);				// création + ajout d'une opération de versement
 		} else {
-			throw new NullAccountException("Compte inexistant");
+			throw new NullAccountException("Erreur:Compte inexistant");
 		}
 		return true;
 	}
@@ -97,10 +97,10 @@ public class IBankImpl implements IBank {
 				return true;// création + ajout d'une opération de retrait
 			}
 			else {
-				throw new RuntimeException("Vous avez dépassé vos capacités de retrait !");
+				throw new RuntimeException("Erreur:Vous avez dépassé vos capacités de retrait !");
 			}
 		}	
-		else throw new RuntimeException("Compte inexistant");	//compte inexistant -> retrait impossible
+		else throw new RuntimeException("Erreur:Compte inexistant");	//compte inexistant -> retrait impossible
 			
 	}
 
@@ -119,7 +119,7 @@ public class IBankImpl implements IBank {
 				pay(accIdDest, amount);		
 				return true;//alors versement
 			}
-			else throw new TransferException("Virement impossible");
+			else throw new TransferException("Erreur:Virement impossible");
 		}
 	}
 
