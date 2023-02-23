@@ -12,7 +12,6 @@ import fr.fms.entities.Customer;
 import fr.fms.entities.Saving;
 import fr.fms.exceptions.*;
 
-
 public class MyBankApp {	
 
 	private static Scanner scan = new Scanner(System.in);
@@ -28,7 +27,6 @@ public class MyBankApp {
 		while(true) {
 			try {
 				Account account = selectAccount();
-
 				System.out.printf("Bienvenue %s, que souhaitez vous faire ?\n", account.getCustomer().getFirstName());
 				selectOperation(account);			
 
@@ -55,7 +53,6 @@ public class MyBankApp {
 				System.out.print("4:Informations sur ce compte - ");
 				System.out.print("5:Liste des opérations - ");
 				System.out.println("6:Sortir");
-
 
 				choice = checkRangeInput(1, 6);
 
@@ -113,6 +110,7 @@ public class MyBankApp {
 		if (account.getAccountId() == accountTo.getAccountId()) {
 			throw new RuntimeException("Vous ne pouvez retirer et verser sur le même compte !");
 		}
+		System.out.println("Saisissez le montant à virer :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
 		return bankJob.transfert(account.getAccountId(), accountTo.getAccountId(), amount);
 	}
