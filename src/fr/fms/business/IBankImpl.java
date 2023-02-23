@@ -10,6 +10,7 @@ import fr.fms.entities.Customer;
 import fr.fms.entities.Transaction;
 import fr.fms.entities.Transfert;
 import fr.fms.entities.withdrawal;
+import fr.fms.exceptions.*;
 
 /**
  * @author El babili - 2022
@@ -47,10 +48,10 @@ public class IBankImpl implements IBank {
 	 * @return Account si existe, null sinon
 	 */
 	@Override
-	public Account consultAccount(long accountId) throws NullPointerException {		
+	public Account consultAccount(long accountId) throws NullAccountException {		
 		Account account = accounts.get(accountId);
 		if (account == null) {
-			throw new NullPointerException("Vous demandez un compte inexistant !");
+			throw new NullAccountException("Vous demandez un compte inexistant !");
 		}
 		return account;
 	}
@@ -59,26 +60,29 @@ public class IBankImpl implements IBank {
 	 * méthode qui effectue le versement d'un montant sur un compte s'il existe
 	 * @param accountId correspond à l'id du compte sur lequel effectuer le versement
 	 * @param amount correspond au montant à verser
+	 * @throws NullAccountException 
 	 */
 	@Override
-	public void pay(long accountId, double amount) throws RuntimeException {				
+	public boolean pay(long accountId, double amount) throws NullAccountException {				
 		Account account = consultAccount(accountId);
 		if(account != null)	{
 			account.setBalance(account.getBalance() + amount);
 			Transaction trans = new Transfert(numTransactions++,new Date(),amount,accountId);
 			account.getListTransactions().add(trans);				// création + ajout d'une opération de versement
 		} else {
-			throw new RuntimeException("Compte inexistant");
+			throw new NullAccountException("Compte inexistant");
 		}
+		return true;
 	}
 
 	/**
 	 * méthode qui effectue le retrait d'un montant sur un compte existant tout en gérant le découvert autorisé qqsoit le compte
 	 * @param accountId correspond à l'id du compte sur lequel effectuer le retrait
 	 * @param amount correspond au montant à retirer 
+	 * @throws NullAccountException 
 	 */
 	@Override
-	public boolean withdraw(long accountId, double amount) throws RuntimeException {			
+	public boolean withdraw(long accountId, double amount) throws NullAccountException {			
 		Account account = consultAccount(accountId);
 		if(account != null) {
 			double capacity = 0;
@@ -89,14 +93,15 @@ public class IBankImpl implements IBank {
 			if(amount <= capacity) {
 				account.setBalance(account.getBalance() - amount);
 				Transaction trans = new withdrawal(numTransactions++,new Date(),amount,accountId);
-				account.getListTransactions().add(trans);		// création + ajout d'une opération de retrait
+				account.getListTransactions().add(trans);	
+				return true;// création + ajout d'une opération de retrait
 			}
 			else {
 				throw new RuntimeException("Vous avez dépassé vos capacités de retrait !");
 			}
 		}	
 		else throw new RuntimeException("Compte inexistant");	//compte inexistant -> retrait impossible
-		return true;	//retrait effectué
+			
 	}
 
 	/**
@@ -104,15 +109,17 @@ public class IBankImpl implements IBank {
 	 * @param accIdSrc correspond à l'id du compte source
 	 * @param accIdSrc correspond à l'id du compte destinataire
 	 * @param amount correspond au montant à virer
+	 * @throws NullAccountException 
 	 */
 	@Override
-	public void transfert(long accIdSrc, long accIdDest, double amount) {	//virement
-		if(accIdSrc == accIdDest)	throw new RuntimeException("Vous ne pouvez retirer et verser sur le même compte !");
+	public boolean transfert(long accIdSrc, long accIdDest, double amount) throws SameAccountTransferException, TransferException, NullAccountException {	//virement
+		if(accIdSrc == accIdDest)	throw new SameAccountTransferException("Vous ne pouvez retirer et verser sur le même compte !");
 		else {
 			if(withdraw(accIdSrc, amount)) {		//retrait si c'est possible
-				pay(accIdDest, amount);				//alors versement
+				pay(accIdDest, amount);		
+				return true;//alors versement
 			}
-			else throw new RuntimeException("Virement impossible");
+			else throw new TransferException("Virement impossible");
 		}
 	}
 
@@ -120,9 +127,10 @@ public class IBankImpl implements IBank {
 	 * Renvoi la liste des transactions sur un compte
 	 * @param accountId 
 	 * @return ArrayList<Transaction>
+	 * @throws NullAccountException 
 	 */
 	@Override
-	public ArrayList<Transaction> listTransactions(long accountId) {
+	public ArrayList<Transaction> listTransactions(long accountId) throws NullAccountException {
 		return consultAccount(accountId).getListTransactions();
 	}
 	
