@@ -15,33 +15,34 @@ import fr.fms.exceptions.*;
 public class MyBankApp {	
 
 	private static Scanner scan = new Scanner(System.in);
-	private static IBankImpl bankJob = new IBankImpl();
 
 	public static void main(String[] args) throws Exception {
-		initSomeAccounts();
-		bankApp();
+		IBankImpl bankJob = new IBankImpl();
+		initSomeAccounts(bankJob);
+		bankApp(bankJob);
 		scan.close();
 	}
 
-	private static void bankApp() throws Exception {
+	private static void bankApp(IBankImpl bankJob) throws Exception {
+		
 		while(true) {
 			try {
-				Account account = selectAccount();
-				selectOperation(account);			
+				Account account = selectAccount(bankJob);
+				selectOperation(account, bankJob);			
 
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println(e.getMessage());
 			}
 		}
 	}
 
-	private static Account selectAccount() throws Exception {	
+	private static Account selectAccount(IBankImpl bankJob) throws Exception {	
 		System.out.println("Saisissez un numéro de compte bancaire valide:");
 		long accountId = checkAccountRegex(scan.nextLine()); 
 		return bankJob.consultAccount(accountId);
 	}
 
-	private static void selectOperation(Account account) throws Exception {
+	private static void selectOperation(Account account, IBankImpl bankJob) throws Exception {
 		System.out.printf("Bienvenue %s, que souhaitez vous faire ?\n", account.getCustomer().getFirstName());
 		int choice = 0;
 		while(choice != 6) {
@@ -58,13 +59,13 @@ public class MyBankApp {
 
 				switch (choice) {
 				case 1:
-					deposit(account);
+					deposit(account, bankJob);
 					break;
 				case 2:
-					withdraw(account);
+					withdraw(account, bankJob);
 					break;
 				case 3:
-					transfer(account);
+					transfer(account, bankJob);
 					break;
 				case 4:
 					System.out.println(account);
@@ -89,23 +90,23 @@ public class MyBankApp {
 		}
 	}
 
-	private static void deposit(Account account) throws Exception {	
+	private static void deposit(Account account, IBankImpl bankJob) throws Exception {	
 		System.out.println("Saisissez le montant à déposer sur ce compte :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
 		if (bankJob.pay(account.getAccountId(), amount))
 			System.out.println("Versement effectué avec succès.");
 	}
 
-	private static void withdraw(Account account) throws Exception {
+	private static void withdraw(Account account, IBankImpl bankJob) throws Exception {
 		System.out.println("Saisissez le montant à retirer sur ce compte :");
 		double amount = checkAmountRegex(scan.nextLine().replace(',','.'));
 		if (bankJob.withdraw(account.getAccountId(), amount))
 			System.out.println("Retrait effectué avec succès.");
 	}
 
-	private static void transfer(Account account) throws Exception {
+	private static void transfer(Account account, IBankImpl bankJob) throws Exception {
 		System.out.println("Vers quel compte souhaitez-vous virer :");
-		Account accountTo = selectAccount();
+		Account accountTo = selectAccount(bankJob);
 		if (account.getAccountId() == accountTo.getAccountId()) 
 			throw new TransferException("Erreur:Vous ne pouvez retirer et verser sur le même compte !");
 		System.out.println("Saisissez le montant à virer :");
@@ -137,7 +138,7 @@ public class MyBankApp {
 		 else return Double.parseDouble(amount);
 	}
 
-	private static void initSomeAccounts() {
+	private static void initSomeAccounts(IBankImpl bankJob) {
 		Customer robert = new Customer(1, "Dupont", "Robert", "robert.dupont@gmail.com");
 		Customer julie = new Customer(2, "Jolie", "Julie", "julie.jolie@gmail.com");	
 
